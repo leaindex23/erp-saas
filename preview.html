@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS ERP - Vista Previa Rápida</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Dependencias React & Babel para ejecutar directo en el navegador localmente -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+  
+  <!-- Supabase CDN (Directo a la Nube) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <!-- Iconos (Feather Icons) -->
+  <script src="https://unpkg.com/feather-icons" crossorigin></script>
+
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --bg-dark: #0F172A;
+      --bg-sidebar: #1E293B;
+      --bg-card: #1E293B;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent-green: #10B981;
+      --accent-red: #EF4444;
+      --border-color: #334155;
+      --font-family: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .app-container {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-links {
+      padding: 1rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-item {
+      padding: 0.75rem 1.5rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background-color: rgba(79, 70, 229, 0.1);
+      color: var(--primary);
+      border-right: 3px solid var(--primary);
+    }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-title {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .metric-change {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+    .metric-change.positive { color: var(--accent-green); }
+    .metric-change.negative { color: var(--accent-red); }
+
+    .data-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .grid-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .grid-table th, .grid-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .grid-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .grid-table tr:hover {
+      background-color: rgba(255,255,255,0.02);
+    }
+
+    .cf-cell {
+      min-width: 120px;
+      cursor: grab;
+    }
+    .cf-cell:active { cursor: grabbing; }
+
+    .tx-pill {
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .tx-pill.ingreso { background: var(--accent-green); }
+    .tx-pill.egreso { background: var(--accent-red); }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Reemplazamos Redux por React useState nativo para evitar bloqueos CORE ORB de archivos locales -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { createClient } = supabase;
+
+    // Cliente Supabase Configurado (Fase 1 completada)
+    const supabaseUrl = 'https://wkkrkvensikrwdpygxvm.supabase.co';
+    const supabaseKey = 'sb_publishable_W56OtOPQ0RHkM-vdYl1bDw_DLZHmK-u';
+    const supabaseDb = createClient(supabaseUrl, supabaseKey);
+
+    // Estado inicial mockeado
+    const initialTransactions = [
+      { id: 1, fecha_pago: '2026-03-25', descripcion: 'Venta Servicios', monto: 1200000, tipo: 'ingreso', semana: 12, subcuenta_id: 5, cuenta_bancaria_id: 1, unidad_negocio: 'Consultoría' },
+      { id: 2, fecha_pago: '2026-03-20', descripcion: 'Pago Alquiler', monto: 500000, tipo: 'egreso', semana: 12, subcuenta_id: 3, cuenta_bancaria_id: 1, unidad_negocio: 'General' },
+      { id: 3, fecha_pago: '2026-04-05', descripcion: 'Pago Internet', monto: 35000, tipo: 'egreso', semana: 14, subcuenta_id: 3, cuenta_bancaria_id: 2, unidad_negocio: 'General' }
+    ];
+
+    // Componente Icon Helper
+    const Icon = ({ name }) => {
+      useEffect(() => { 
+        if(window.feather) window.feather.replace(); 
+      });
+      return <i data-feather={name} style={{ width: 20, height: 20 }}></i>;
+    };
+
+    // 1. Sidebar
+    function Sidebar({ activeTab, setActiveTab }) {
+      const menuItems = [
+        { id: 'dashboard', icon: 'grid', label: 'Dashboard CFO' },
+        { id: 'transactions', icon: 'repeat', label: 'Transacciones' },
+        { id: 'presupuesto', icon: 'target', label: 'Presupuestos' },
+        { id: 'pnl', icon: 'bar-chart-2', label: 'P&L Real' },
+        { id: 'cashflow', icon: 'activity', label: 'Cash Flow' },
+        { id: 'cajas', icon: 'pocket', label: 'Cuentas Bancarias' },
+        { id: 'accounts', icon: 'list', label: 'Plan de Cuentas' },
+      ];
+
+      return (
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <span style={{color: 'var(--primary)'}}><Icon name="trending-up" /></span> SaaS ERP
+          </div>
+          <div className="nav-links">
+            {menuItems.map(item => (
+              <div 
+                key={item.id} 
+                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.id)}
+              >
+                <Icon name={item.icon} />
+                {item.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // 2. Vistas
+    function Dashboard({ txs }) {
+      const ingresosTotales = txs.filter(t => t.tipo === 'ingreso').reduce((acc, tx) => acc + tx.monto, 0);
+      const egresosTotales = txs.filter(t => t.tipo === 'egreso' || t.tipo === 'gasto').reduce((acc, tx) => acc + tx.monto, 0);
+      
+      const balanceBancario = 1500000; // Mock current bank balance global (1M + 500k)
+      const totalAvailable = balanceBancario + ingresosTotales - egresosTotales;
+
+      // Mock data for CFO widgets
+      const burnRateMes = 535000; 
+      const runwayMeses = (totalAvailable / burnRateMes).toFixed(1);
+
+      return (
+        <div>
+          <h2 style={{ marginBottom: '2rem' }}>📊 Dashboard Financiero (CFO)</h2>
+          
+          <div className="dashboard-grid">
+            <div className="metric-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+              <div className="metric-title">Caja Total Disponible + Proyectada</div>
+              <div className="metric-value">${totalAvailable.toLocaleString()}</div>
+              <div className="metric-change positive">
+                <Icon name="trending-up" /> +12% vs mes anterior
+              </div>
+            </div>
+
+            <div className="metric-card" style={{ borderLeft: '4px solid var(--text-muted)' }}>
+              <div className="metric-title">Runway (Meses de Caja)</div>
+              <div className="metric-value">{runwayMeses} meses</div>
+              <div className="metric-change" style={{ color: 'var(--text-muted)' }}>
+                <Icon name="clock" /> Margen de supervivencia actual
+              </div>
+            </div>
+
+            <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-red)' }}>
+              <div className="metric-title">Burn Rate / Salidas Mes</div>
+              <div className="metric-value">${burnRateMes.toLocaleString()}</div>
+              <div className="metric-change negative">
+                <Icon name="alert-circle" /> Gasto operativo fijo aproximado
+              </div>
+            </div>
+
+            <div className="metric-card" style={{ borderLeft: '4px solid var(--accent-green)' }}>
+              <div className="metric-title">Cuentas por Cobrar (AR)</div>
+              <div className="metric-value">$850,000</div>
+              <div className="metric-change positive">
+                <Icon name="check-circle" /> 2 facturas al día, 1 pendiente
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="data-card">
+              <div className="card-header">
+                <div className="card-title">Evolución P&L (Últimos 6 meses)</div>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Ingresos vs Margen Neto</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', height: '200px', marginTop: '1rem' }}>
+                {[60, 45, 80, 50, 95, 75].map((h, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', gap: '0.5rem' }}>
+                    <div style={{ position: 'relative', height: `${h}%`, width: '100%', background: 'rgba(79, 70, 229, 0.2)', borderRadius: '4px 4px 0 0', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', bottom: 0, width: '100%', height: `${h * 0.7}%`, background: 'var(--primary)' }}></div>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>Mes {i+1}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1.5rem', fontSize: '0.875rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: 12, height: 12, background: 'rgba(79, 70, 229, 0.2)', borderRadius: '2px' }}></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Gross Revenue (Bruto)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: 12, height: 12, background: 'var(--primary)', borderRadius: '2px' }}></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Net Margin (Operativo)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="data-card">
+              <div className="card-header">
+                <div className="card-title">Cuentas por Pagar Críticas</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Alquiler de Oficina</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--accent-red)', marginTop: '0.25rem' }}>Vence en 2 días</div>
+                  </div>
+                  <div style={{ fontWeight: 700 }}>$500,000</div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Licencias Software</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Vence en 15 días</div>
+                  </div>
+                  <div style={{ fontWeight: 700 }}>$150,000</div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Servicios / Internet</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Vence en 22 días</div>
+                  </div>
+                  <div style={{ fontWeight: 700 }}>$80,000</div>
+                </div>
+              </div>
+              <button className="btn" style={{ width: '100%', marginTop: '1.5rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}>
+                Ver Todos los Vencimientos (AP)
+              </button>
+            </div>
+          </div>
+          
+          <div className="data-card">
+            <div className="card-header">
+              <div className="card-title">Últimas Transacciones</div>
+              <button className="btn">Ver Resumen Completo</button>
+            </div>
+            <table className="grid-table">
+              <thead>
+                <tr>
+                  <th>Unidad de Negocio</th>
+                  <th>Fecha Pago</th>
+                  <th>Descripción</th>
+                  <th>Monto</th>
+                  <th>Tipo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {txs.map(tx => (
+                  <tr key={tx.id}>
+                    <td><span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>{tx.unidad_negocio}</span></td>
+                    <td>{tx.fecha_pago}</td>
+                    <td>{tx.descripcion}</td>
+                    <td>${tx.monto.toLocaleString()}</td>
+                    <td>
+                      <span className={`tx-pill ${tx.tipo}`} style={{ cursor: 'default', margin: 0 }}>
+                        {tx.tipo.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    function Budget({ txs, unidades }) {
+      const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const [unidad, setUnidad] = useState(unidades?.[0]?.nombre || 'Centralized (Global)');
+
+      const cuentas = [
+        { id: 5, nombre: 'Suscripciones Recurrentes', tipo: 'ingreso' },
+        { id: 6, nombre: 'Setup Fees / Onboarding', tipo: 'ingreso' },
+        { id: 3, nombre: 'Alquiler Oficinas', tipo: 'gasto' },
+        { id: 7, nombre: 'Sueldos Devs', tipo: 'gasto' },
+        { id: 8, nombre: 'Marketing / Ads', tipo: 'gasto' },
+        { id: 9, nombre: 'Servidores AWS', tipo: 'gasto' }
+      ];
+
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Icon name="target" /> Presupuestos y Forecast
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Cargar para:</span>
+              <select 
+                value={unidad} 
+                onChange={e => setUnidad(e.target.value)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '6px', background: 'var(--bg-sidebar)', color: 'var(--text-main)', border: '1px solid var(--border-color)', cursor: 'pointer', outline: 'none' }}>
+                {unidades.map(u => <option key={u.id} value={u.nombre}>{u.nombre}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+            {/* Gráfico Actual vs Budget */}
+            <div className="data-card">
+              <div className="card-header">
+                <div className="card-title">Real vs Presupuesto (P&L Comparativo)</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', height: '180px', gap: '2rem', padding: '1rem', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%' }}>
+                    <div style={{ height: '70%', width: '70px', background: 'var(--accent-green)', borderRadius: '4px' }}></div>
+                    <span style={{ fontSize: '0.875rem' }}>Ingresos Reales</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%' }}>
+                    <div style={{ height: '90%', width: '70px', background: 'rgba(16, 185, 129, 0.2)', border: '2px dashed var(--accent-green)', borderRadius: '4px' }}></div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Budget Ingresos</span>
+                </div>
+                <div style={{ width: '1px', background: 'var(--border-color)', height: '100%' }}></div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%' }}>
+                    <div style={{ height: '50%', width: '70px', background: 'var(--accent-red)', borderRadius: '4px' }}></div>
+                    <span style={{ fontSize: '0.875rem' }}>Gastos Reales</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%' }}>
+                    <div style={{ height: '55%', width: '70px', background: 'rgba(239, 68, 68, 0.2)', border: '2px dashed var(--accent-red)', borderRadius: '4px' }}></div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Budget Gastos</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Diferencias / Variances */}
+            <div className="data-card">
+              <div className="card-header">
+                <div className="card-title">Variaciones (Variances)</div>
+              </div>
+              <table className="grid-table" style={{ fontSize: '0.875rem' }}>
+                <thead>
+                  <tr>
+                    <th>Cuenta</th>
+                    <th>Real</th>
+                    <th>Budget</th>
+                    <th>Dif %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Suscripciones</td>
+                    <td>$1.2M</td>
+                    <td>$1.5M</td>
+                    <td style={{ color: 'var(--accent-red)' }}>-20% <Icon name="arrow-down-right" /></td>
+                  </tr>
+                  <tr>
+                    <td>Ads / Marketing</td>
+                    <td>$400k</td>
+                    <td>$300k</td>
+                    <td style={{ color: 'var(--accent-red)' }}>+33% <Icon name="alert-triangle" /></td>
+                  </tr>
+                  <tr>
+                    <td>Sueldos Devs</td>
+                    <td>$2.0M</td>
+                    <td>$2.0M</td>
+                    <td style={{ color: 'var(--text-muted)' }}>0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="data-card" style={{ paddingBottom: '2rem' }}>
+            <div className="card-header">
+              <div className="card-title">Planilla Formato Spreadsheet (Año Editable)</div>
+              <button className="btn">Guardar Cambios</button>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="grid-table" style={{ minWidth: '1200px', fontSize: '0.875rem', borderCollapse: 'separate', borderSpacing: 0 }}>
+                <thead>
+                  <tr>
+                    <th style={{ minWidth: '200px', position: 'sticky', left: 0, background: 'var(--bg-card)', zIndex: 1, borderRight: '1px solid var(--border-color)' }}>Cuenta Contable</th>
+                    {meses.map(m => <th key={m} style={{ textAlign: 'center' }}>{m}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={13} style={{ color: 'var(--accent-green)', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)', padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>INGRESOS</td>
+                  </tr>
+                  {cuentas.filter(c => c.tipo === 'ingreso').map(c => (
+                    <tr key={c.id}>
+                      <td style={{ position: 'sticky', left: 0, background: 'var(--bg-card)', borderRight: '1px solid var(--border-color)' }}>{c.nombre}</td>
+                      {meses.map(m => (
+                        <td key={m} style={{ padding: '0.25rem' }}>
+                          <input type="text" defaultValue={c.id === 5 ? "1500000" : "500000"} 
+                            style={{ 
+                              width: '100%', 
+                              padding: '0.5rem', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              border: '1px solid transparent', 
+                              color: 'var(--text-main)', 
+                              textAlign: 'right', 
+                              borderRadius: '4px',
+                              fontFamily: 'monospace'
+                            }} 
+                            onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
+                            onBlur={(e) => e.target.style.border = '1px solid transparent'}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  
+                  <tr>
+                    <td colSpan={13} style={{ color: 'var(--accent-red)', fontWeight: 'bold', borderBottom: '1px solid var(--border-color)', borderTop: '2px solid var(--border-color)', padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>GASTOS OPERATIVOS</td>
+                  </tr>
+                  {cuentas.filter(c => c.tipo === 'gasto').map(c => (
+                    <tr key={c.id}>
+                      <td style={{ position: 'sticky', left: 0, background: 'var(--bg-card)', borderRight: '1px solid var(--border-color)' }}>{c.nombre}</td>
+                      {meses.map(m => (
+                        <td key={m} style={{ padding: '0.25rem' }}>
+                          <input type="text" defaultValue={c.id === 3 ? "500000" : "300000"} 
+                            style={{ 
+                              width: '100%', 
+                              padding: '0.5rem', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              border: '1px solid transparent', 
+                              color: 'var(--text-main)', 
+                              textAlign: 'right', 
+                              borderRadius: '4px',
+                              fontFamily: 'monospace'
+                            }} 
+                            onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
+                            onBlur={(e) => e.target.style.border = '1px solid transparent'}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Icon name="info" /> Edita las celdas directamente. Los cambios aplican únicamente a la Unidad de Negocio seleccionada arriba.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function CashFlow({ txs, updateTransactionWeek }) {
+
+      const weeks = [11, 12, 13, 14, 15, 16];
+
+      const bankAccounts = [
+        { id: 1, nombre: 'Banco Galicia', saldo_inicial: 1000000 },
+        { id: 2, nombre: 'Mercado Pago', saldo_inicial: 500000 }
+      ];
+
+      const incomeAccounts = [
+        { id: 5, nombre: 'Venta Servicios' }
+      ];
+      const expenseAccounts = [
+        { id: 3, nombre: 'Gastos' }
+      ];
+
+      const weeklyDataPerBank = {};
+
+      bankAccounts.forEach(bank => {
+        let currentBalance = bank.saldo_inicial || 0;
+        
+        const accumulatedBeforeWeek11 = txs
+          .filter(t => t.semana < weeks[0] && t.cuenta_bancaria_id === bank.id)
+          .reduce((acc, t) => t.tipo === 'ingreso' ? acc + t.monto : acc - t.monto, 0);
+        
+        currentBalance += accumulatedBeforeWeek11;
+
+        const wData = {};
+        weeks.forEach(w => {
+          const weekTxs = txs.filter(t => t.semana === w && t.cuenta_bancaria_id === bank.id);
+          
+          const inTotal = weekTxs.filter(t => t.tipo === 'ingreso').reduce((sum, t) => sum + t.monto, 0);
+          const outTotal = weekTxs.filter(t => t.tipo === 'egreso').reduce((sum, t) => sum + t.monto, 0);
+
+          wData[w] = {
+            saldoInicial: currentBalance,
+            ingresos: inTotal,
+            egresos: outTotal,
+            saldoFinal: currentBalance + inTotal - outTotal
+          };
+          
+          currentBalance = wData[w].saldoFinal;
+        });
+
+        weeklyDataPerBank[bank.id] = wData;
+      });
+
+      const handleDragStart = (e, txId) => e.dataTransfer.setData("txId", txId);
+
+      const handleDrop = (e, targetWeek) => {
+        e.preventDefault();
+        const txId = parseInt(e.dataTransfer.getData("txId"), 10);
+        const tx = txs.find(t => t.id === txId);
+        
+        // Se remueve la regla de "solo a la derecha", ahora puede moverse a cualquier semana
+        if (tx && tx.semana !== targetWeek) {
+          updateTransactionWeek(txId, targetWeek);
+        }
+      };
+
+      const handleDragOver = (e) => e.preventDefault();
+
+      return (
+        <div>
+          <div className="card-header">
+            <h2 className="card-title">Cash Flow Proyectado</h2>
+          </div>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+            Arrastra las transacciones para proyectar los pagos futuros. Puedes moverlas libremente entre las semanas.
+          </p>
+          
+          <div className="data-card" style={{ overflowX: 'auto' }}>
+            <table className="grid-table" style={{ minWidth: '900px' }}>
+              <thead>
+                <tr>
+                  <th style={{ minWidth: '200px' }}>Cuentas</th>
+                  {weeks.map(w => <th key={w}>Semana {w}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {/* 1. Saldos Iniciales */}
+                <tr style={{ background: 'var(--bg-card)' }}>
+                  <td colSpan={weeks.length + 1}><strong>Saldos Iniciales</strong></td>
+                </tr>
+                {bankAccounts.map(bank => (
+                  <tr key={`init-${bank.id}`} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ paddingLeft: '2rem' }}>{bank.nombre}</td>
+                    {weeks.map(w => (
+                      <td key={`init-${bank.id}-${w}`} className="cf-cell numeric" style={{ color: 'var(--text-main)', textAlign: 'right' }}>
+                        ${(weeklyDataPerBank[bank.id][w].saldoInicial / 1000).toLocaleString()}k
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+
+                {/* 2. Ingresos */}
+                <tr style={{ background: 'rgba(16, 185, 129, 0.05)' }}>
+                  <td colSpan={weeks.length + 1} style={{ color: 'var(--accent-green)' }}><strong>Ingresos</strong></td>
+                </tr>
+                {incomeAccounts.map(account => (
+                  <tr key={account.id}>
+                    <td style={{ paddingLeft: '2rem' }}>{account.nombre}</td>
+                    {weeks.map(w => {
+                      const weekTxs = txs.filter(t => t.semana === w && t.subcuenta_id === account.id && t.tipo === 'ingreso');
+                      return (
+                        <td 
+                          key={w} 
+                          className="cf-cell"
+                          onDrop={(e) => handleDrop(e, w)}
+                          onDragOver={handleDragOver}
+                          style={{ borderLeft: '1px dashed var(--border-color)', verticalAlign: 'top', minWidth: '100px' }}
+                        >
+                          {weekTxs.map(tx => (
+                            <div 
+                              key={tx.id} 
+                              className={`tx-pill ${tx.tipo}`}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, tx.id)}
+                              title={tx.descripcion}
+                            >
+                              ${tx.monto / 1000}k
+                            </div>
+                          ))}
+                          <div style={{ minHeight: '30px' }}></div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* 3. Egresos */}
+                <tr style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
+                  <td colSpan={weeks.length + 1} style={{ color: 'var(--accent-red)' }}><strong>Egresos</strong></td>
+                </tr>
+                {expenseAccounts.map(account => (
+                  <tr key={account.id}>
+                    <td style={{ paddingLeft: '2rem' }}>{account.nombre}</td>
+                    {weeks.map(w => {
+                      const weekTxs = txs.filter(t => t.semana === w && t.subcuenta_id === account.id && t.tipo === 'egreso');
+                      return (
+                        <td 
+                          key={w} 
+                          className="cf-cell"
+                          onDrop={(e) => handleDrop(e, w)}
+                          onDragOver={handleDragOver}
+                          style={{ borderLeft: '1px dashed var(--border-color)', verticalAlign: 'top', minWidth: '100px' }}
+                        >
+                          {weekTxs.map(tx => (
+                            <div 
+                              key={tx.id} 
+                              className={`tx-pill ${tx.tipo}`}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, tx.id)}
+                              title={tx.descripcion}
+                            >
+                              ${tx.monto / 1000}k
+                            </div>
+                          ))}
+                          <div style={{ minHeight: '30px' }}></div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+
+                {/* 4. Saldos Finales Estimados */}
+                <tr style={{ background: 'var(--bg-card)', borderTop: '2px solid var(--border-color)' }}>
+                  <td colSpan={weeks.length + 1}><strong>Saldos Finales Estimados</strong></td>
+                </tr>
+                {bankAccounts.map(bank => (
+                  <tr key={`fin-${bank.id}`} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ paddingLeft: '2rem' }}>{bank.nombre}</td>
+                    {weeks.map(w => (
+                      <td key={`fin-${bank.id}-${w}`} className="cf-cell numeric" style={{ textAlign: 'right' }}>
+                        <strong style={{ color: weeklyDataPerBank[bank.id][w].saldoFinal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                          ${(weeklyDataPerBank[bank.id][w].saldoFinal / 1000).toLocaleString()}k
+                        </strong>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    } // Fin CashFlow
+
+    function TransactionsCore({ txs, setTxs, unidades, setUnidades }) {
+      const cuentasBancarias = [
+        { id: 1, nombre: 'Banco Galicia (Primario)' },
+        { id: 2, nombre: 'MercadoPago' },
+        { id: 3, nombre: 'Bank of America (USD)' },
+        { id: 4, nombre: 'Caja Fuerte (Efectivo)' }
+      ];
+
+      const [nuevaTx, setNuevaTx] = useState({ 
+        fecha_factura: '', fecha_pago: '', descripcion: '', monto: '', 
+        tipo: 'egreso', unidad_negocio_id: 1, cuenta_bancaria_id: 1, proyecto_id: '' 
+      });
+      const [nuevaUnidad, setNuevaUnidad] = useState('');
+      
+      const [filtros, setFiltros] = useState({ 
+        descripcion: '', unidad_negocio: '', tipo: '', monto: '',
+        ff_desde: '', ff_hasta: '', fp_desde: '', fp_hasta: ''
+      });
+
+      // EDIT LOGIC
+      const [editingTxId, setEditingTxId] = useState(null);
+      const [editFormData, setEditFormData] = useState({});
+
+      const handleEditClick = (tx) => {
+        setEditingTxId(tx.id);
+        setEditFormData(tx);
+      };
+
+      const handleSaveEdit = () => {
+        if(!editFormData.descripcion || !editFormData.monto) return alert("Descripción y monto son requeridos.");
+        
+        let unObj = unidades.find(u => u.id === parseInt(editFormData.unidad_negocio_id));
+        let bankObj = cuentasBancarias.find(b => b.id === parseInt(editFormData.cuenta_bancaria_id));
+
+        const updatedRecord = {
+          ...editFormData,
+          monto: parseFloat(editFormData.monto),
+          banco_nombre: bankObj ? bankObj.nombre : editFormData.banco_nombre,
+          unidad_negocio: unObj ? unObj.nombre : editFormData.unidad_negocio,
+        };
+
+        // Local state update
+        setTxs(prevTxs => prevTxs.map(t => t.id === updatedRecord.id ? updatedRecord : t));
+
+        // Supabase Async update
+        const { id, fecha_factura: _f, proyecto_id: _p, banco_nombre: _b, ...dbRecord } = updatedRecord;
+        supabaseDb.from('transactions').update(dbRecord).eq('id', id).then(({ error }) => {
+          if (error) console.warn("Supabase Edit warning:", error);
+        });
+        setEditingTxId(null);
+      };
+
+      const handleAddTx = (e) => {
+        e.preventDefault();
+        if(!nuevaTx.descripcion || !nuevaTx.monto) return alert("Completa la descripción y el monto (la fecha de pago es opcional)");
+        
+        const unObj = unidades.find(u => u.id === parseInt(nuevaTx.unidad_negocio_id));
+        const bankObj = cuentasBancarias.find(b => b.id === parseInt(nuevaTx.cuenta_bancaria_id));
+        
+        const newRecord = {
+          id: Date.now(),
+          fecha_factura: nuevaTx.fecha_factura,
+          fecha_pago: nuevaTx.fecha_pago || '', // Opcional
+          descripcion: nuevaTx.descripcion,
+          monto: parseFloat(nuevaTx.monto),
+          tipo: nuevaTx.tipo,
+          semana: 15,
+          cuenta_bancaria_id: nuevaTx.cuenta_bancaria_id,
+          banco_nombre: bankObj ? bankObj.nombre : 'General',
+          unidad_negocio: unObj ? unObj.nombre : 'General',
+          proyecto_id: nuevaTx.proyecto_id,
+          moneda: 'ARS',
+          tipo_cambio: 1
+        };
+        
+        setTxs([newRecord, ...txs]);
+        
+        // BACKUP SUPABASE: Retiramos campos q no están en DB
+        const { id: _, fecha_factura: _f1, proyecto_id: _p1, banco_nombre: _b1, ...dbRecord } = newRecord; 
+        supabaseDb.from('transactions').insert([dbRecord]).then(({ error }) => {
+          if (error) console.error("Error al guardar en Supabase", error);
+        });
+
+        setNuevaTx({ fecha_factura: '', fecha_pago: '', descripcion: '', monto: '', tipo: 'egreso', unidad_negocio_id: unidades[0]?.id || 1, cuenta_bancaria_id: cuentasBancarias[0].id, proyecto_id: '' });
+      };
+
+      const handleAddUnidad = (e) => {
+        e.preventDefault();
+        if(nuevaUnidad.trim() === '') return;
+        setUnidades([...unidades, { id: Date.now(), nombre: nuevaUnidad }]);
+        setNuevaUnidad('');
+      };
+
+      const handleDeleteUnidad = (id) => {
+        if(unidades.length <= 1) return alert("Debe quedar 1 unidad.");
+        setUnidades(unidades.filter(u => u.id !== id));
+      };
+
+      const txsFiltradas = txs.filter(tx => {
+        let matchFF = true;
+        if (filtros.ff_desde) matchFF = matchFF && (tx.fecha_factura && tx.fecha_factura >= filtros.ff_desde);
+        if (filtros.ff_hasta) matchFF = matchFF && (tx.fecha_factura && tx.fecha_factura <= filtros.ff_hasta);
+
+        let matchFP = true;
+        if (filtros.fp_desde) matchFP = matchFP && (tx.fecha_pago && tx.fecha_pago >= filtros.fp_desde);
+        if (filtros.fp_hasta) matchFP = matchFP && (tx.fecha_pago && tx.fecha_pago <= filtros.fp_hasta);
+
+        return (
+          matchFF && matchFP &&
+          (!filtros.descripcion || tx.descripcion.toLowerCase().includes(filtros.descripcion.toLowerCase()) || (tx.proyecto_id && tx.proyecto_id.toLowerCase().includes(filtros.descripcion.toLowerCase()))) &&
+          (!filtros.unidad_negocio || (tx.unidad_negocio && tx.unidad_negocio.toLowerCase().includes(filtros.unidad_negocio.toLowerCase()))) &&
+          (!filtros.tipo || tx.tipo === filtros.tipo) &&
+          (!filtros.monto || tx.monto.toString().includes(filtros.monto))
+        );
+      });
+
+      const inlineInputStyle = { width: '100%', padding: '0.25rem', fontSize: '0.75rem', background: 'var(--bg-dark)', color: 'white', border: '1px solid var(--border-color)', borderRadius: '4px' };
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2.5fr) minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+          
+          <div className="data-card" style={{ padding: 0, overflowX: 'auto' }}>
+            <div className="card-header" style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: 0 }}>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Icon name="list" /> Hoja Maestra de Transacciones
+              </h2>
+            </div>
+            <table className="grid-table" style={{ fontSize: '0.875rem' }}>
+              <thead>
+                <tr>
+                  <th>F. Fra.</th>
+                  <th>F. Pago</th>
+                  <th style={{ minWidth: '180px' }}>ID Proy. / Desc</th>
+                  <th>Unidad de Negocio</th>
+                  <th>Caja / Banco</th>
+                  <th>Tipo</th>
+                  <th style={{ textAlign: 'right' }}>Monto</th>
+                  <th></th>
+                </tr>
+                {/* Fila de Filtros */}
+                <tr style={{ background: 'var(--bg-dark)' }}>
+                  <th>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <input type="date" title="Factura Desde" value={filtros.ff_desde} onChange={e => setFiltros({...filtros, ff_desde: e.target.value})} style={inlineInputStyle} />
+                      <input type="date" title="Factura Hasta" value={filtros.ff_hasta} onChange={e => setFiltros({...filtros, ff_hasta: e.target.value})} style={inlineInputStyle} />
+                    </div>
+                  </th>
+                  <th>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <input type="date" title="Pago Desde" value={filtros.fp_desde} onChange={e => setFiltros({...filtros, fp_desde: e.target.value})} style={inlineInputStyle} />
+                      <input type="date" title="Pago Hasta" value={filtros.fp_hasta} onChange={e => setFiltros({...filtros, fp_hasta: e.target.value})} style={inlineInputStyle} />
+                    </div>
+                  </th>
+                  <th><input type="text" placeholder="Buscar Desc/Proy..." value={filtros.descripcion} onChange={e => setFiltros({...filtros, descripcion: e.target.value})} style={inlineInputStyle} /></th>
+                  <th><input type="text" placeholder="Filtro Unidad" value={filtros.unidad_negocio} onChange={e => setFiltros({...filtros, unidad_negocio: e.target.value})} style={inlineInputStyle} /></th>
+                  <th></th>
+                  <th>
+                    <select value={filtros.tipo} onChange={e => setFiltros({...filtros, tipo: e.target.value})} style={inlineInputStyle}>
+                      <option value="">Todos</option>
+                      <option value="ingreso">Ingresos</option>
+                      <option value="egreso">Egresos</option>
+                    </select>
+                  </th>
+                  <th><input type="text" placeholder="Filtro $" value={filtros.monto} onChange={e => setFiltros({...filtros, monto: e.target.value})} style={{...inlineInputStyle, textAlign: 'right'}} /></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {txsFiltradas.length === 0 ? (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No hay transacciones que coincidan con los filtros.</td></tr>
+                ) : (
+                 txsFiltradas.slice().map(tx => {
+                   const bankObj = cuentasBancarias.find(b => b.id === parseInt(tx.cuenta_bancaria_id));
+                   const currentBankName = tx.banco_nombre || bankObj?.nombre || 'General';
+
+                   if (editingTxId === tx.id) {
+                     return (
+                       <tr key={tx.id} style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                         <td><input type="date" value={editFormData.fecha_factura || ''} onChange={e => setEditFormData({...editFormData, fecha_factura: e.target.value})} style={inlineInputStyle} /></td>
+                         <td><input type="date" value={editFormData.fecha_pago || ''} onChange={e => setEditFormData({...editFormData, fecha_pago: e.target.value})} style={inlineInputStyle} /></td>
+                         <td>
+                           <input type="text" value={editFormData.descripcion} onChange={e => setEditFormData({...editFormData, descripcion: e.target.value})} style={{...inlineInputStyle, marginBottom: '4px'}} />
+                           <input type="text" placeholder="PRJ-ID" value={editFormData.proyecto_id || ''} onChange={e => setEditFormData({...editFormData, proyecto_id: e.target.value})} style={{...inlineInputStyle, color: 'var(--primary)'}} />
+                         </td>
+                         <td>
+                           <select value={editFormData.unidad_negocio_id || ''} onChange={e => setEditFormData({...editFormData, unidad_negocio_id: e.target.value})} style={inlineInputStyle}>
+                             <option value="">{tx.unidad_negocio}</option>
+                             {unidades.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                           </select>
+                         </td>
+                         <td>
+                           <select value={editFormData.cuenta_bancaria_id || ''} onChange={e => setEditFormData({...editFormData, cuenta_bancaria_id: e.target.value})} style={inlineInputStyle}>
+                             <option value="">{currentBankName}</option>
+                             {cuentasBancarias.map(b => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                           </select>
+                         </td>
+                         <td>
+                           <select value={editFormData.tipo} onChange={e => setEditFormData({...editFormData, tipo: e.target.value})} style={inlineInputStyle}>
+                             <option value="ingreso">Ingreso (+)</option>
+                             <option value="egreso">Egreso (-)</option>
+                           </select>
+                         </td>
+                         <td><input type="number" value={editFormData.monto} onChange={e => setEditFormData({...editFormData, monto: e.target.value})} style={{...inlineInputStyle, textAlign: 'right'}} /></td>
+                         <td>
+                           <div style={{ display: 'flex', gap: '0.25rem', flexDirection: 'column' }}>
+                             <button onClick={handleSaveEdit} className="btn" style={{ padding: '0.25rem', fontSize: '0.7rem' }}>✔</button>
+                             <button onClick={() => setEditingTxId(null)} className="btn" style={{ padding: '0.25rem', fontSize: '0.7rem', background: 'var(--bg-dark)' }}>✖</button>
+                           </div>
+                         </td>
+                       </tr>
+                     )
+                   }
+
+                   return (
+                    <tr key={tx.id} onDoubleClick={() => handleEditClick(tx)} style={{ cursor: 'pointer' }} title="Doble click para editar">
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{tx.fecha_factura || '--/--/--'}</td>
+                      <td style={{ fontWeight: 500, fontSize: '0.75rem' }}>{tx.fecha_pago || 'Pendiente'}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span>{tx.descripcion}</span>
+                          {tx.proyecto_id && <span style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>ID: {tx.proyecto_id}</span>}
+                        </div>
+                      </td>
+                      <td><span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.75rem' }}>{tx.unidad_negocio || 'Global'}</span></td>
+                      <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{currentBankName}</td>
+                      <td>
+                        <span className={`tx-pill ${tx.tipo}`} style={{ margin: 0, padding: '0.15rem 0.5rem' }}>{tx.tipo.toUpperCase()}</span>
+                      </td>
+                      <td style={{ fontWeight: 600, textAlign: 'right' }}>${(tx.monto).toLocaleString()}</td>
+                      <td>
+                        <button onClick={() => handleEditClick(tx)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><Icon name="edit-2" size={14} /></button>
+                      </td>
+                    </tr>
+                   );
+                 })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: '1.5rem' }}>
+            <div className="data-card" style={{ background: 'var(--bg-sidebar)' }}>
+              <div className="card-header" style={{ marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.125rem' }}>Nueva Transacción</h3>
+              </div>
+              <form onSubmit={handleAddTx} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Fecha Fra.</label>
+                    <input type="date" value={nuevaTx.fecha_factura} onChange={e => setNuevaTx({...nuevaTx, fecha_factura: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white', fontSize: '0.75rem' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Fecha Pago <i style={{color:'var(--accent-green)'}}>(Opc)</i></label>
+                    <input type="date" value={nuevaTx.fecha_pago} onChange={e => setNuevaTx({...nuevaTx, fecha_pago: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white', fontSize: '0.75rem' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Afectar Caja / Banco</label>
+                  <select value={nuevaTx.cuenta_bancaria_id} onChange={e => setNuevaTx({...nuevaTx, cuenta_bancaria_id: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white', fontSize: '0.875rem' }}>
+                    {cuentasBancarias.map(b => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Descripción *</label>
+                  <input type="text" placeholder="Ej: Pago de Servidores AWS" value={nuevaTx.descripcion} onChange={e => setNuevaTx({...nuevaTx, descripcion: e.target.value})} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Proyecto <i style={{color:'var(--accent-green)'}}>(Opc)</i></label>
+                    <input type="text" placeholder="PRJ-123" value={nuevaTx.proyecto_id} onChange={e => setNuevaTx({...nuevaTx, proyecto_id: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Monto *</label>
+                    <input type="number" placeholder="0.00" value={nuevaTx.monto} onChange={e => setNuevaTx({...nuevaTx, monto: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Unidad de Negocio</label>
+                    <select value={nuevaTx.unidad_negocio_id} onChange={e => setNuevaTx({...nuevaTx, unidad_negocio_id: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white' }}>
+                      {unidades.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tipo</label>
+                    <select value={nuevaTx.tipo} onChange={e => setNuevaTx({...nuevaTx, tipo: e.target.value})} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white' }}>
+                      <option value="egreso">Egreso (-)</option>
+                      <option value="ingreso">Ingreso (+)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn" style={{ marginTop: '0.5rem', width: '100%', padding: '0.75rem' }}>Imputar Transacción</button>
+              </form>
+            </div>
+
+            <div className="data-card" style={{ background: 'var(--bg-sidebar)', padding: '1rem' }}>
+              <h3 style={{ fontSize: '0.875rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Icon name="tag" />  Etiquetas de Unidad</h3>
+              <form onSubmit={handleAddUnidad} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                <input type="text" placeholder="Ej: HR" value={nuevaUnidad} onChange={e => setNuevaUnidad(e.target.value)} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-dark)', color: 'white', fontSize: '0.875rem' }} />
+                <button type="submit" className="btn" style={{ padding: '0.5rem' }}><Icon name="plus" /></button>
+              </form>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                {unidades.map(u => (
+                  <li key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-dark)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    <span>{u.nombre}</span>
+                    <button onClick={() => handleDeleteUnidad(u.id)} style={{ background: 'none', border: 'none', color: 'var(--accent-red)', cursor: 'pointer' }}><Icon name="trash-2" /></button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      );
+    }
+
+    // 3. App Principal
+    function App() {
+      const [activeTab, setActiveTab] = useState('transactions');
+      const [txs, setTxs] = useState(initialTransactions);
+      
+      const [unidades, setUnidades] = useState([
+        { id: 1, nombre: 'Centralized (Global)' },
+        { id: 2, nombre: 'SaaS Platform' },
+        { id: 3, nombre: 'Consultoría API' },
+        { id: 4, nombre: 'Soporte B2B' }
+      ]);
+
+      const updateTransactionWeek = (id, newWeek) => {
+        setTxs(prevTxs => prevTxs.map(tx => 
+          tx.id === id ? { ...tx, semana: newWeek } : tx
+        ));
+      };
+
+      const renderContent = () => {
+        switch (activeTab) {
+          case 'dashboard': return <Dashboard txs={txs} />;
+          case 'presupuesto': return <Budget txs={txs} unidades={unidades} />;
+          case 'transactions': return <TransactionsCore txs={txs} setTxs={setTxs} unidades={unidades} setUnidades={setUnidades} />;
+          case 'cashflow': return <CashFlow txs={txs} updateTransactionWeek={updateTransactionWeek} />;
+          default: return (
+             <div>
+                <h2 style={{ marginBottom: '2rem', textTransform: 'capitalize' }}>
+                  Módulo: {activeTab.replace('-', ' ')}
+                </h2>
+                <div className="data-card">
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    Esta vista se encuentra en construcción para el desarrollo con Vite y la API de Sheets.  
+                    <br/><br/>
+                    <strong>Navega a las pestañas "Dashboard", "Transacciones", "Presupuestos" o "Cash Flow".</strong>
+                  </p>
+                </div>
+             </div>
+          );
+        }
+      };
+
+      return (
+        <div className="app-container">
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <div className="main-content">
+            {renderContent()}
+          </div>
+        </div>
+      );
+    }
+
+    // Montar Aplicación
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
