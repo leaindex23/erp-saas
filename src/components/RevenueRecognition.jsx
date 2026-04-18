@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { selectAllTransactions } from '../features/transactionsSlice';
 import { addProject, updateProject, deleteProject, setProjectAvance } from '../features/projectsSlice';
 import {
   Plus, Edit2, Trash2, X, ChevronDown, Target, TrendingUp,
@@ -76,7 +77,7 @@ export default function RevenueRecognition({ convertToUSD }) {
   const dispatch = useDispatch();
   const projects    = useSelector(s => s.projects.items);
   const clients     = useSelector(s => s.clients.items);
-  const txs         = useSelector(s => s.transactions.items);
+  const txs         = useSelector(selectAllTransactions);
   const accounts    = useSelector(s => s.accounts.items);
   const { companies, currentCompanyId, isHoldingView } = useSelector(s => s.company);
 

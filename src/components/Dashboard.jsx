@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { selectAllTransactions } from '../features/transactionsSlice';
 import {
   TrendingUp, TrendingDown, Wallet, Activity, AlertTriangle, Info,
   BarChart3, ArrowUpRight, ArrowDownRight, Target, DollarSign,
@@ -206,7 +207,7 @@ function PnLMonthly({ realData, budgetData, months }) {
 
 // ── Main Dashboard component ──────────────────────────────────────────────────
 export default function Dashboard({ convertToUSD }) {
-  const txs          = useSelector(s => s.transactions.items);
+  const txs          = useSelector(selectAllTransactions);
   const bankAccounts = useSelector(s => s.bankAccounts.items);
   const budget       = useSelector(s => s.budget.items);
   const accounts     = useSelector(s => s.accounts.items);

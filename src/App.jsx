@@ -16,7 +16,7 @@ import {
   ExternalLink, ChevronDown, ChevronRight, Calendar, Filter, FileText,
   PieChart, Users, Check, Edit2, Trash2, ArrowLeftRight, ArrowUp, ArrowDown, UserCog
 } from 'lucide-react';
-import { updateTransactionWeek, addTransaction, updateTransaction, deleteTransaction } from './features/transactionsSlice';
+import { selectAllTransactions, updateTransactionWeek, addTransaction, updateTransaction, deleteTransaction } from './features/transactionsSlice';
 import { addUser, updateUser, deleteUser } from './features/usersSlice';
 import { TIPO_COLOR, TIPO_LABEL, updateAccount } from './features/accountsSlice';
 import { addBankAccount, updateBankAccount, deleteBankAccount } from './features/bankAccountsSlice';
@@ -412,7 +412,7 @@ function Sidebar({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user })
       </div>
 
       {!isCollapsed && (
-        <div className="company-selector-container" style={{ padding: '1rem 0.75rem', borderBottom: '1px solid var(--border-color)', margin: '0 0.5rem' }}>
+        <div className="company-selector-container" style={{ padding: '1rem 0.75rem', borderBottom: '1px solid var(--border-color)', margin: '0 0.5rem', flexShrink: 0 }}>
           <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Estructura</div>
           
           <div 
@@ -467,7 +467,7 @@ function Sidebar({ activeTab, setActiveTab, isCollapsed, setIsCollapsed, user })
 }
 
 function _DashboardLegacy_REMOVED({ convertToUSD }) {
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const bankAccounts = useSelector(state => state.bankAccounts.items);
   const budget = useSelector(state => state.budget.items);
   const accounts = useSelector(state => state.accounts.items);
@@ -663,7 +663,7 @@ function _DashboardLegacy_REMOVED({ convertToUSD }) {
 }
 
 function _PnLReportLegacy_REMOVED({ convertToUSD }) {
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const accounts = useSelector(state => state.accounts.items);
   const { currentCompanyId, isHoldingView, companies } = useSelector(state => state.company);
   
@@ -970,7 +970,7 @@ function _PnLReportLegacy_REMOVED({ convertToUSD }) {
 }
 
 function CashFlow({ onSelectTransaction, getRate }) {
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const accounts = useSelector(state => state.accounts.items);
   const projections = useSelector(state => state.projections.items);
   const bankAccounts = useSelector(state => state.bankAccounts.items);
@@ -1528,7 +1528,7 @@ function ClientsManagement() {
 
 function TransactionsCore({ unidades, selectedTx, setSelectedTx, getRateForDate, userPerms }) {
   const dispatch = useDispatch();
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const planCuentas = useSelector(state => state.accounts.items);
   const bankAccounts = useSelector(state => state.bankAccounts.items);
   const { currentCompanyId, isHoldingView, companies } = useSelector(state => state.company);
@@ -2343,7 +2343,7 @@ function AccountManagement() {
 
 function Cajas() {
   const bankAccounts = useSelector(state => state.bankAccounts.items);
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const companies = useSelector(state => state.company.companies);
   const dispatch = useDispatch();
   const [isAdding, setIsAdding] = useState(false);
@@ -2447,7 +2447,7 @@ function Cajas() {
 }
 
 function CuentasAP() {
-  const txs = useSelector(state => state.transactions.items);
+  const txs = useSelector(selectAllTransactions);
   const today = new Date().toISOString().split('T')[0];
 
   // AR = ingresos con fecha_factura < hoy y sin fecha_pago o fecha_pago > hoy
@@ -2804,6 +2804,7 @@ function UsersManagement() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     email: '',
+    password: '',
     name: '',
     isRoot: false,
     allowedCompanies: [],
@@ -2815,6 +2816,7 @@ function UsersManagement() {
     const payload = {
       id: editingId || Date.now(),
       email: form.email,
+      password: form.password,
       name: form.name,
       permissions: {
         isRoot: form.isRoot,
@@ -2829,7 +2831,7 @@ function UsersManagement() {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ email: '', name: '', isRoot: false, allowedCompanies: [], allowedAccounts: [] });
+    setForm({ email: '', password: '', name: '', isRoot: false, allowedCompanies: [], allowedAccounts: [] });
     setIsAdding(true);
   };
 
@@ -2892,7 +2894,7 @@ function UsersManagement() {
                 <td style={{ textAlign: 'right' }}>
                   <button className="btn" style={{ marginRight: 6, padding: '0.2rem 0.5rem', background: '#f3f4f6', color: '#374151' }} onClick={() => {
                     setEditingId(u.id);
-                    setForm({ email: u.email, name: u.name, isRoot: u.permissions?.isRoot||false, allowedCompanies: u.permissions?.allowedCompanies||[], allowedAccounts: u.permissions?.allowedAccounts||[] });
+                    setForm({ email: u.email, password: u.password || '', name: u.name, isRoot: u.permissions?.isRoot||false, allowedCompanies: u.permissions?.allowedCompanies||[], allowedAccounts: u.permissions?.allowedAccounts||[] });
                     setIsAdding(true);
                   }}>
                     <Edit2 size={12} />
@@ -2919,6 +2921,11 @@ function UsersManagement() {
                 <label className="form-section-label">Correo (Login Email)</label>
                 <input type="email" className="search-input" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required style={{ width: '100%' }} />
               </div>
+            </div>
+            
+            <div>
+              <label className="form-section-label">Contraseña</label>
+              <input type="text" className="search-input" placeholder="Min. 6 caracteres" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required style={{ width: '100%' }} />
             </div>
 
             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 8, border: '1px solid #e2e8f0' }}>
@@ -2985,22 +2992,9 @@ function App() {
   const rates = useSelector(state => state.exchangeRates.items);
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) dispatch(setUser(session.user));
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) dispatch(setUser(session.user));
-      else dispatch(setUser(null));
-    });
-
     if (!currentCompanyId && companies.length > 0) {
       dispatch(setCurrentCompany(companies[0].id));
     }
-
-    return () => subscription.unsubscribe();
   }, [dispatch, currentCompanyId, companies]);
 
   const getRateForDate = (dateStr) => {
@@ -3035,7 +3029,7 @@ function App() {
             <Search size={16} color="var(--text-faint)" />
             <input type="text" placeholder="Buscar..." style={{ background: 'transparent', border: 'none', width: '100%' }} />
           </div>
-          <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }} onClick={() => { if(window.confirm('¿Cerrar sesión?')) supabase.auth.signOut().then(() => dispatch(logout())); }}>
+          <div className="user-profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer' }} onClick={() => { if(window.confirm('¿Cerrar sesión?')) dispatch(logout()); }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{user.user_metadata?.full_name || user.email}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-faint)' }}>CFO @ {companies.find(c => c.id === currentCompanyId)?.nombre || 'Holding'}</div>

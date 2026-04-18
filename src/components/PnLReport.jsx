@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { selectAllTransactions } from '../features/transactionsSlice';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
@@ -83,7 +84,7 @@ function SubtotalRow({ label, colValues, annualTotal, prevAnnual, baseIngresos, 
 
 // ─── Main component ────────────────────────────────────────────────────────
 export default function PnLReport({ convertToUSD }) {
-  const txs      = useSelector(s => s.transactions.items);
+  const txs      = useSelector(selectAllTransactions);
   const accounts = useSelector(s => s.accounts.items);
   const projects = useSelector(s => s.projects?.items || []);
   const clients  = useSelector(s => s.clients?.items || []);

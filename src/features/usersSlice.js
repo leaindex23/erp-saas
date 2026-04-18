@@ -4,19 +4,22 @@ const initialState = {
   users: [
     { 
       id: 1, 
-      email: 'admin@financesaas.com', 
+      email: 'admin@financesaas.com',
+      password: 'admin', 
       name: 'Super Admin',
       permissions: { isRoot: true, allowedCompanies: [1, 2], allowedAccounts: [1, 2, 3, 4, 5] }
     },
     { 
       id: 2, 
       email: 'caja_fuerte@holding.com', 
+      password: 'user123',
       name: 'Operador Caja Fuerte',
       permissions: { isRoot: false, allowedCompanies: [2], allowedAccounts: [3] }
     },
     { 
       id: 3, 
       email: 'manager_saas@holding.com', 
+      password: 'user123',
       name: 'SaaS Manager',
       permissions: { isRoot: false, allowedCompanies: [2], allowedAccounts: [3, 4, 5] }
     }
